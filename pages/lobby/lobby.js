@@ -1,10 +1,8 @@
-import io from 'socket.io-client';
-import { useState, useEffect } from 'react';
+import { SocketContext } from '../api/socketContext';
+import { useState, useEffect, useContext } from 'react';
 
-const log = (stuff) => console.log(stuff);
-
-function Test() {
-  const socket = io();
+function Lobby() {
+  const socket = useContext(SocketContext);
   const [lobbyData, setLobbyData] = useState(null);
   const [playerData, setPlayerData] = useState(null);
   const [loginData, setLoginData] = useState({
@@ -19,7 +17,6 @@ function Test() {
   const handleLogin = () => {
     socket.emit('createLobby', { name: loginData.name, lobby: loginData.lobby });
     socket.on('success', (data) => {
-      console.log(data);
       setLobbyData(data.lobbyData.lobby);
       setPlayerData(data.playerData.player);
     });
@@ -43,18 +40,18 @@ function Test() {
     <div>
       {lobbyData ? console.log(lobbyData.players) : null}
       <form>
-        <input type="text" placeholder="Enter your nickname" name="name" onChange={() => handleFormChange}/>
+        <input type="text" placeholder="Enter your nickname" name="name" onChange={(e) => handleFormChange(e)}/>
         <br/>
-        <input type="text" placeholder="Enter lobby name" name="lobby" onChange={() => handleFormChange}/>
+        <input type="text" placeholder="Enter lobby name" name="lobby" onChange={(e) => handleFormChange(e)}/>
         <br/>
-        <button type="button" onClick={() => handleLogin}>Create Lobby</button>
+        <button type="button" onClick={handleLogin}>Create Lobby</button>
         <br/>
-        <button type="button" onClick={() => handleJoinLobby}>Join Lobby</button>
+        <button type="button" onClick={handleJoinLobby}>Join Lobby</button>
       </form>
       <h1>Current Players</h1>
-      {lobbyData ? Object.keys(lobbyData.players).map((player) => (<div key={player}>{player}</div>)) : null}
+      {lobbyData ? Object.keys(lobbyData.players).map((player) => (<div key={player}>{lobbyData.players[player].name}</div>)) : null}
     </div>
   )
 }
 
-export default Test;
+export default Lobby;

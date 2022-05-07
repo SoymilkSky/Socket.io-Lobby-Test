@@ -4,7 +4,7 @@ const server = require('http').Server(app);
 const io = require('socket.io')(server);
 const next  = require('next');
 const { lobbies, addLobby, getLobby, deleteLobby } = require('./lobby');
-const { assignPlayerToLobby, removePlayerFromLobby } = require('./player');
+const { players, assignPlayerToLobby, removePlayerFromLobby } = require('./player');
 
 const dev = process.env.NODE_ENV !== 'production';
 const nextApp = next({ dev })
@@ -22,17 +22,22 @@ io.on('connect', socket => {
     if (lobbyData.error) {
       lobbyData = await getLobby(lobby);
     }
-    const playerData = await assignPlayerToLobby(name, lobby);
+    const playerData = await assignPlayerToLobby(name, lobby, socket.id);
     socket.emit('success', { playerData, lobbyData });
   });
   socket.on('joinLobby', async ({ name, lobby }) => {
     let lobbyData = await getLobby(lobby);
-    const playerData = await assignPlayerToLobby(name, lobby);
+    const playerData = await assignPlayerToLobby(name, lobby, socket.id);
     socket.emit('success', { playerData, lobbyData });
     emitLobbyData(lobby);
   })
-  socket.on('disconnect', ({ name, lobby }) => {
-    console.log(name, lobby);
+  socket.on('disconnect', () => {
+    const player = players.get(socket.id);
+    console.log(player);
+    if (player) {
+      removePlayerFromLobby(player.lobby, socket.id);
+      emitLobbyData(player.lobby);
+    }
   });
 });
 
