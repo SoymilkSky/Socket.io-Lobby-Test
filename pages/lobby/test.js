@@ -1,6 +1,8 @@
 import io from 'socket.io-client';
 import { useState, useEffect } from 'react';
 
+const log = (stuff) => console.log(stuff);
+
 function Test() {
   const socket = io();
   const [lobbyData, setLobbyData] = useState(null);
@@ -17,30 +19,29 @@ function Test() {
   const handleLogin = () => {
     socket.emit('createLobby', { name: loginData.name, lobby: loginData.lobby });
     socket.on('success', (data) => {
-      setLobbyData({ lobbyData: data.lobbyData });
-      setPlayerData({ playerData: data.playerData });
+      console.log(data);
+      setLobbyData(data.lobbyData.lobby);
+      setPlayerData(data.playerData.player);
     });
   }
 
-  const handleJoinLobby = () => {
-    socket.emit('joinLobby', { name: loginData.name, lobby: loginData.lobby});
-    socket.on('success', (data) => {
-      setLobbyData({ lobbyData: data.lobbyData });
-      setPlayerData({ playerData: data.playerData });
-    })
+  const handleJoinLobby = async () => {
+    await socket.emit('joinLobby', { name: loginData.name, lobby: loginData.lobby});
+    await socket.on('success', (data) => {
+      setLobbyData(data.lobbyData.lobby);
+      setPlayerData(data.playerData.player);
+    });
   }
 
-  // useEffect(() => {
-  //   console.log('hello');
-  //   socket.on('sendLobbyData', (data) => {
-  //     console.log(data);
-  //     setLobbyData({ lobbyData: data.lobbyData });
-  //   });
-  //   socket.emit('getLobbyData', { lobby: loginData.lobby });
-  // }, [socket]);
+  useEffect(() => {
+    socket.on('lobby', (data) => {
+      setLobbyData(data.lobbyData);
+    });
+  }, [socket]);
 
   return(
     <div>
+      {lobbyData ? console.log(lobbyData.players) : null}
       <form>
         <input type="text" placeholder="Enter your nickname" name="name" onChange={handleFormChange}/>
         <br/>
@@ -50,10 +51,8 @@ function Test() {
         <br/>
         <button type="button" onClick={handleJoinLobby}>Join Lobby</button>
       </form>
-      <div>
-        Current Players
-        {/* {lobbyData && Object.keys(lobbyData.players).map((player) => (<div>{player}</div>))} */}
-      </div>
+      <h1>Current Players</h1>
+      {lobbyData ? Object.keys(lobbyData.players).map((player) => (<div key={player}>{player}</div>)) : null}
     </div>
   )
 }

@@ -11,27 +11,28 @@ const nextApp = next({ dev })
 const handler = nextApp.getRequestHandler();
 const port = process.env.PORT || 3000;
 
+const emitLobbyData = async (lobby) => {
+  const lobbyData = await getLobby(lobby);
+  io.emit('lobby', { lobbyData });
+}
+
 io.on('connect', socket => {
-  socket.on('createLobby', async (data) => {
-    let lobbyData = await addLobby(data.lobby);
+  socket.on('createLobby', async ({ name, lobby}) => {
+    let lobbyData = await addLobby(lobby);
     if (lobbyData.error) {
-      lobbyData = await getLobby(data.lobby);
+      lobbyData = await getLobby(lobby);
     }
-    const playerData = await  assignPlayerToLobby(data.name, data.lobby);
+    const playerData = await assignPlayerToLobby(name, lobby);
     socket.emit('success', { playerData, lobbyData });
   });
-  socket.on('joinLobby', async (data) => {
-    let lobbyData = await getLobby(data.lobby);
-    console.log(lobbyData);
-    const playerData = await assignPlayerToLobby(data.name, data.lobby);
+  socket.on('joinLobby', async ({ name, lobby }) => {
+    let lobbyData = await getLobby(lobby);
+    const playerData = await assignPlayerToLobby(name, lobby);
     socket.emit('success', { playerData, lobbyData });
+    emitLobbyData(lobby);
   })
-  socket.on('disconnect', ({ name, lobby }, callback) => {
-
-  });
-
-  socket.on('getLobbyData', async(data) => {
-    console.log(data);
+  socket.on('disconnect', ({ name, lobby }) => {
+    console.log(name, lobby);
   });
 });
 
